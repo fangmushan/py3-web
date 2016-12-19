@@ -33,8 +33,9 @@ $(function () {
 
     <div class="uk-width-medium-3-4">
         <article class="uk-article">
-            <h2>{{ blog.name }}</h2>
-            <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}</p>
+            <h2>{{ blog.html_name|safe }}</h2>
+            <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}，最晚更新于{{ blog.updated_at|datetime }}</p></p>
+            <p><strong>{{ blog.html_summary|safe }}</strong></p>
             <p>{{ blog.html_content|safe }}</p>
         </article>
 

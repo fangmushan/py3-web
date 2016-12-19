@@ -14,9 +14,9 @@
     <div class="uk-width-medium-3-4">
     {% for blog in blogs %}
         <article class="uk-article">
-            <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h2>
-            <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}</p>
-            <p>{{ blog.summary }}</p>
+            <h2><a href="/blog/{{ blog.id }}">{{ blog.html_name }}</a></h2>
+            <p class="uk-article-meta">发表于{{ blog.created_at|datetime }}，最晚更新于{{ blog.updated_at|datetime }}</p>
+            <p>{{ blog.html_summary }}</p>
             <p><a href="/blog/{{ blog.id }}">继续阅读 <i class="uk-icon-angle-double-right"></i></a></p>
         </article>
         <hr class="uk-article-divider">

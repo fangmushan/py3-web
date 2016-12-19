@@ -12,7 +12,7 @@ import markdown2
 from aiohttp import web
 
 from coroweb import get, post
-from apis import Page, APIValueError, APIResourceNotFoundError
+from apis import Page, APIValueError, APIResourceNotFoundError,APIError
 
 from models import User, Comment, Blog, next_id
 from config import configs
@@ -85,6 +85,9 @@ def index(*, page='1'):
         page = 0
     else:
         blogs = yield from Blog.findAll(orderBy='created_at desc', limit=(page.offset, page.limit))
+    for blog in blogs:
+        blog.html_name = blog.name[1:]
+        blog.html_summary = blog.summary[2:]
     return {
         '__template__': 'blogs.html',
         'page': page,
@@ -99,6 +102,8 @@ def get_blog(id):
     for c in comments:
         c.html_content = text2html(c.content)
     blog.html_content = markdown2.markdown(blog.content)
+    blog.html_summary = markdown2.markdown(blog.summary)
+    blog.html_name = markdown2.markdown(blog.name)
     return {
         '__template__': 'blog.html',
         'blog': blog,
@@ -152,7 +157,7 @@ def signout(request):
 
 @get('/manage/')
 def manage():
-    return 'redirect:/manage/comments'
+    return 'redirect:/manage/blogs'
 
 @get('/manage/comments')
 def manage_comments(*, page='1'):
@@ -240,7 +245,7 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$'
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 
 @post('/api/users')
-def api_register_user(*, email, name, passwd):
+def api_register_user(*, email, name, passwd,created_at):
     if not name or not name.strip():
         raise APIValueError('name')
     if not email or not _RE_EMAIL.match(email):
@@ -249,10 +254,10 @@ def api_register_user(*, email, name, passwd):
         raise APIValueError('passwd')
     users = yield from User.findAll('email=?', [email])
     if len(users) > 0:
-        raise APIError('register:failed', 'email', 'Email is already in use.')
+        raise APIError('register:failed', 'email', '该邮箱已经被注册')
     uid = next_id()
     sha1_passwd = '%s:%s' % (uid, passwd)
-    user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest())
+    user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest(),created_at=time.time())
     yield from user.save()
     # make session cookie:
     r = web.Response()
@@ -286,7 +291,7 @@ def api_create_blog(request, *, name, summary, content):
         raise APIValueError('summary', 'summary cannot be empty.')
     if not content or not content.strip():
         raise APIValueError('content', 'content cannot be empty.')
-    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
+    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip(),created_at = time.time())
     yield from blog.save()
     return blog
 
@@ -300,9 +305,12 @@ def api_update_blog(id, request, *, name, summary, content):
         raise APIValueError('summary', 'summary cannot be empty.')
     if not content or not content.strip():
         raise APIValueError('content', 'content cannot be empty.')
+    # if (blog['name'] == name.strip() and blog['summary'] == summary.strip() and blog['content'] = content.strip()):
+    #     raise APIValueError('content','nothing changed')
     blog.name = name.strip()
     blog.summary = summary.strip()
     blog.content = content.strip()
+    blog.updated_at = time.time()
     yield from blog.update()
     return blog
 

@@ -73,9 +73,10 @@ $(function() {
         <table class="uk-table uk-table-hover">
             <thead>
                 <tr>
-                    <th class="uk-width-5-10">标题 / 摘要</th>
+                    <th class="uk-width-3-10">标题 / 摘要</th>
                     <th class="uk-width-2-10">作者</th>
                     <th class="uk-width-2-10">创建时间</th>
+                    <th class="uk-width-2-10">最晚更新时间</th>
                     <th class="uk-width-1-10">操作</th>
                 </tr>
             </thead>
@@ -89,6 +90,9 @@ $(function() {
                     </td>
                     <td>
                         <span v-text="blog.created_at.toDateTime()"></span>
+                    </td>
+                    <td>
+                        <span v-text="blog.updated_at.toDateTime()"></span>
                     </td>
                     <td>
                         <a href="#0" v-on="click: edit_blog(blog)"><i class="uk-icon-edit"></i>
